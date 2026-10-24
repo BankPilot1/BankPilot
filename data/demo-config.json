@@ -1,0 +1,18 @@
+{
+  "accounts": [
+    {"id":"cmb-debit","name":"招商工资卡","bank":"招商银行","initial":"招","tail":"1024","type":"debit","balance":22000,"color":"#ab303a","note":"模拟储蓄账户 · Sparkov 消费映射"},
+    {"id":"icbc-debit","name":"工商储蓄卡","bank":"工商银行","initial":"工","tail":"9588","type":"debit","balance":16200,"color":"#a83a29","note":"模拟储蓄账户 · Sparkov 消费映射"},
+    {"id":"cmb-credit","name":"招商信用卡","bank":"招商银行","initial":"招","tail":"3321","type":"credit","limit":30000,"dueDay":28,"color":"#796952","note":"模拟信用卡 · 本月消费推导待还"},
+    {"id":"spdb-credit","name":"浦发信用卡","bank":"浦发银行","initial":"浦","tail":"8872","type":"credit","limit":50000,"dueDay":26,"color":"#354e8e","note":"模拟信用卡 · 本月消费推导待还"}
+  ],
+  "subscriptions": [
+    {"id":"music","name":"云端音乐","amount":18,"accountId":"cmb-debit","day":3,"status":"active","icon":"music"},
+    {"id":"video","name":"视频会员","amount":25,"accountId":"cmb-debit","day":4,"status":"active","icon":"play"},
+    {"id":"cloud","name":"云空间","amount":12,"accountId":"cmb-debit","day":5,"status":"active","icon":"cloud"}
+  ],
+  "contacts": [
+    {"id":"wang-1","name":"小王","detail":"王明 · 招商银行 · 尾号 6208"},
+    {"id":"wang-2","name":"小王","detail":"王悦 · 工商银行 · 尾号 3516"},
+    {"id":"li","name":"小李","detail":"李林 · 工商银行 · 尾号 8812"}
+  ]
+}

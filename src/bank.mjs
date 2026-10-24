@@ -1,39 +1,12 @@
 import { randomUUID } from 'node:crypto';
+import { datasetSeed, migrateDataset } from './dataset.mjs';
 
 const now = () => new Date().toISOString();
 const day = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai' }).format(new Date());
 const money = n => `¥${n.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-const month = () => day().slice(0, 7);
 const uid = prefix => `${prefix}_${randomUUID().slice(0, 12)}`;
-function seed() {
-  const accounts = [
-    { id: 'cmb-debit', name: '招商工资卡', bank: '招商银行', initial: '招', tail: '1024', type: 'debit', balance: 22000, color: '#ab303a', note: '日常收支 · 工资账户' },
-    { id: 'icbc-debit', name: '工商储蓄卡', bank: '工商银行', initial: '工', tail: '9588', type: 'debit', balance: 16200, color: '#a83a29', note: '备用资金 · 储蓄账户' },
-    { id: 'cmb-credit', name: '招商信用卡', bank: '招商银行', initial: '招', tail: '3321', type: 'credit', due: 7820, limit: 30000, color: '#796952', note: '日常消费', dueDate: `${month()}-28` },
-    { id: 'spdb-credit', name: '浦发信用卡', bank: '浦发银行', initial: '浦', tail: '8872', type: 'credit', due: 12430, limit: 50000, color: '#354e8e', note: '大额消费', dueDate: `${month()}-26` },
-  ];
-  const categories = [['餐饮美食', '小巷食堂', 48], ['购物消费', '生活好物', 168], ['交通出行', '城市出行', 23], ['生活缴费', '生活服务', 86], ['休闲娱乐', '周末影院', 65]];
-  const transactions = [];
-  for (let m = 0; m < 6; m++) {
-    const d = new Date(`${month()}-01T12:00:00+08:00`); d.setUTCMonth(d.getUTCMonth() - m);
-    const ym = d.toISOString().slice(0, 7);
-    for (let i = 1; i <= 22; i++) {
-      const c = categories[i % categories.length];
-      transactions.push({ id: `seed-${m}-${i}`, accountId: accounts[i % 4].id, merchant: c[1], category: c[0], amount: -(c[2] + ((i * 17 + m * 13) % 80)), date: `${ym}-${String(i).padStart(2, '0')}T10:20:00+08:00`, kind: 'expense' });
-    }
-    transactions.push({ id: `salary-${m}`, accountId: 'cmb-debit', merchant: '工资入账', category: '工资收入', amount: 18500, date: `${ym}-15T09:00:00+08:00`, kind: 'income' });
-    for (const [j, merchant, amount] of [[1, '云端音乐', 18], [2, '视频会员', 25], [3, '云空间', 12]]) transactions.push({ id: `sub-${m}-${j}`, accountId: 'cmb-debit', merchant, category: '订阅服务', amount: -amount, date: `${ym}-${String(j + 2).padStart(2, '0')}T09:00:00+08:00`, kind: 'expense' });
-  }
-  transactions.push({ id: 'unusual-1', accountId: 'spdb-credit', merchant: '数码商店', category: '购物消费', amount: -3299, date: `${month()}-20T16:35:00+08:00`, kind: 'expense' });
-  return { accounts, transactions, tasks: [], audit: [], messages: {}, contexts: {}, daily: {}, subscriptions: [
-    { id: 'music', name: '云端音乐', amount: 18, accountId: 'cmb-debit', next: '下月 3 日', status: 'active', icon: 'music' },
-    { id: 'video', name: '视频会员', amount: 25, accountId: 'cmb-debit', next: '下月 4 日', status: 'active', icon: 'play' },
-    { id: 'cloud', name: '云空间', amount: 12, accountId: 'cmb-debit', next: '下月 5 日', status: 'active', icon: 'cloud' },
-  ], contacts: [{ id: 'wang-1', name: '小王', detail: '王明 · 招商银行 · 尾号 6208' }, { id: 'wang-2', name: '小王', detail: '王悦 · 工商银行 · 尾号 3516' }, { id: 'li', name: '小李', detail: '李林 · 工商银行 · 尾号 8812' }] };
-}
-
 export function createStore(saved) {
-  let state = saved || seed();
+  let state = migrateDataset(saved);
   const log = (action, detail) => state.audit.unshift({ id: uid('audit'), time: now(), action, detail });
   function scopeAccounts(scope) {
     if (scope === 'all') return state.accounts;
@@ -59,12 +32,19 @@ export function createStore(saved) {
   return {
     get state() { return state; },
     bootstrap() { return { ...state, environment: 'demo', demoDate: day() }; },
-    reset() { state = seed(); log('重置演示', '已恢复初始演示数据'); return { ok: true }; },
+    recordAi(input,text,card,model) {
+      scopeAccounts(input.scope||'all');
+      saveMessage(input.scope||'all','user',input.text);
+      const result=response(input.scope||'all',text,card);
+      result.message.ai={model,status:'success'};
+      return result;
+    },
+    reset() { state = datasetSeed(); log('重置演示', '已恢复初始演示数据'); return { ok: true }; },
     transactions(scope) { const ids = scopeAccounts(scope).map(a => a.id); return state.transactions.filter(t => ids.includes(t.accountId)).sort((a, b) => b.date.localeCompare(a.date)); },
-    chat({ scope = 'all', text, action }) {
+    chat({ scope = 'all', text, action, originalText }) {
       scopeAccounts(scope);
       if (typeof text !== 'string' || !text.trim()) throw new Error('请输入消息');
-      text = text.trim().slice(0, 2000); saveMessage(scope, 'user', text);
+      text = text.trim().slice(0, 2000); saveMessage(scope, 'user', typeof originalText==='string'?originalText.slice(0,2000):text);
       log('意图解析', `范围 ${scope}；规则式演示意图路由（非大模型）`);
       const selected = scopeAccounts(scope);
       const ctx = state.contexts[scope] ||= {};
@@ -104,7 +84,7 @@ export function createStore(saved) {
         delete ctx.pendingSubscriptionQuery;
         for (const message of state.messages[scope]) if (message.card?.type === 'subscription-consent') message.card.resolved = true;
         log('用户确认', '用户确认读取当前范围订阅与代扣记录');
-        return response(scope, '以下是演示商户的模拟代扣授权。连续六个月的同额扣费作为周期识别依据；此处不代表真实商户订阅。', { type: 'subscriptions', ids: state.subscriptions.filter(s => selected.some(a => a.id === s.accountId)).map(s => s.id) });
+        return response(scope, '以下是演示商户的模拟代扣授权。周期扣费由独立演示配置补充，不来自 Sparkov；此处不代表真实商户订阅。', { type: 'subscriptions', ids: state.subscriptions.filter(s => selected.some(a => a.id === s.accountId)).map(s => s.id) });
       }
       if (/够|资金计划|还款计划/.test(text)) {
         const savings = state.accounts.filter(a => a.type === 'debit');
@@ -118,13 +98,14 @@ export function createStore(saved) {
       }
       if (/消费|花|支出|分析|异常|账单|报告/.test(text)) {
         const previous = /上个?月/.test(text) && !/比|对比/.test(text);
-        const d = new Date(`${month()}-01T12:00:00+08:00`); d.setUTCMonth(d.getUTCMonth() - 1); const last = d.toISOString().slice(0, 7);
-        const period = previous ? last : month();
+        const analysisMonth = state.dataset.referenceDate.slice(0,7);
+        const d = new Date(`${analysisMonth}-01T12:00:00+08:00`); d.setUTCMonth(d.getUTCMonth() - 1); const last = d.toISOString().slice(0, 7);
+        const period = previous ? last : analysisMonth;
         const tx = state.transactions.filter(t => selected.some(a => a.id === t.accountId) && t.kind === 'expense' && t.date.startsWith(period));
         const prior = state.transactions.filter(t => selected.some(a => a.id === t.accountId) && t.kind === 'expense' && t.date.startsWith(last)).reduce((s, t) => s - t.amount, 0);
         const categories = {}; tx.forEach(t => categories[t.category] = (categories[t.category] || 0) - t.amount);
         const total = tx.reduce((s, t) => s - t.amount, 0);
-        return response(scope, '已按交易类别汇总消费，转账不计入消费。大额记录仅作为待核查提示，不代表已判定欺诈。', { type: 'analysis', period, total, prior: previous ? null : prior, count: tx.length, categories: Object.entries(categories).sort((a,b) => b[1]-a[1]), unusual: tx.filter(t => -t.amount > 2000), updatedAt: now() });
+        return response(scope, `已按 ${period} 演示期汇总消费，转账不计入消费。Sparkov 记录保留来源；金额及日期经过演示转换，大额提示不代表欺诈判定。`, { type: 'analysis', period, total, prior: previous ? null : prior, count: tx.length, datasetCount: tx.filter(t=>t.source==='sparkov').length, fixtureCount: tx.filter(t=>t.source!=='sparkov').length, categories: Object.entries(categories).sort((a,b) => b[1]-a[1]), unusualCount: tx.filter(t => -t.amount > 2000).length, unusualRule: '单笔超过 2000 元；列表仅展示金额最高的三笔，并非全部大额交易', unusual: tx.filter(t => -t.amount > 2000).sort((a,b)=>a.amount-b.amount).slice(0,3), source: state.dataset.name, referenceDate: state.dataset.referenceDate, updatedAt: now() });
       }
       if (/余额|多少钱|资产|资金/.test(text)) return response(scope, '以下为当前会话范围的账户快照。储蓄余额与信用卡额度分别展示。', { type: 'balances', accounts: selected.map(a => ({ name: a.name, tail: a.tail, type: a.type, amount: a.type === 'debit' ? a.balance : a.limit - a.due })), updatedAt: now() });
       if (/交易|流水|明细/.test(text)) return response(scope, '已读取当前范围最近的 8 笔交易。', { type: 'transactions', transactions: this.transactions(scope).slice(0, 8) });
@@ -151,7 +132,7 @@ export function createStore(saved) {
         log('用户授权', `${task.id}；已确认${task.risk === 'red' ? '并通过模拟强验证' : ''}`);
         payer.balance = Math.round((payer.balance - task.payload.amount) * 100) / 100;
         state.daily[day()] = total;
-        const tx = { id: uid('tx'), accountId: payer.id, merchant: `转账给${task.payload.name}`, category: '转账', amount: -task.payload.amount, date: now(), kind: 'transfer', remark: task.payload.remark };
+        const tx = { id: uid('tx'), accountId: payer.id, merchant: `转账给${task.payload.name}`, category: '转账', amount: -task.payload.amount, date: now(), kind: 'transfer', source: 'demo-operation', currency: 'CNY', remark: task.payload.remark };
         state.transactions.unshift(tx); task.receipt = tx.id;
       } else {
         const sub = state.subscriptions.find(s => s.id === task.payload.subscriptionId);

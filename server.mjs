@@ -3,13 +3,18 @@ import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createStore } from './src/bank.mjs';
+import { aiConfig, aiAvailable, aiChat } from './src/ai.mjs';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
+try { process.loadEnvFile(path.join(root,'.env')); } catch(e) { if(e.code!=='ENOENT') throw e; }
+const modelConfig=aiConfig();
 await mkdir(path.join(root, '.data'), { recursive: true });
 const statePath = path.join(root, '.data/state.json');
 let saved;
 try { saved = JSON.parse(await readFile(statePath, 'utf8')); } catch (e) { if (e.code !== 'ENOENT') throw e; }
 const bank = createStore(saved);
+if (saved && !saved.dataset) await writeFile(path.join(root, '.data', `state-before-sparkov-${Date.now()}.json`), JSON.stringify(saved));
+await writeFile(statePath, JSON.stringify(bank.state));
 let writes = Promise.resolve();
 const persist = () => { const snapshot = JSON.stringify(bank.state); writes = writes.then(() => writeFile(statePath, snapshot)); return writes; };
 const json = (res, status, body) => { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' }); res.end(JSON.stringify(body)); };
@@ -24,9 +29,9 @@ const server = http.createServer(async (req, res) => {
         body = JSON.parse(raw || '{}');
       }
       let result;
-      if (req.method === 'GET' && url.pathname === '/api/bootstrap') result = bank.bootstrap();
+      if (req.method === 'GET' && url.pathname === '/api/bootstrap') result = {...bank.bootstrap(),ai:{configured:aiAvailable(modelConfig),model:aiAvailable(modelConfig)?modelConfig.model:null}};
       else if (req.method === 'GET' && url.pathname === '/api/transactions') result = bank.transactions(url.searchParams.get('scope') || 'all');
-      else if (req.method === 'POST' && url.pathname === '/api/chat') result = bank.chat(body);
+      else if (req.method === 'POST' && url.pathname === '/api/chat') result = await aiChat(bank,body,modelConfig);
       else if (req.method === 'POST' && url.pathname === '/api/tasks/confirm') result = bank.confirm(body);
       else if (req.method === 'POST' && url.pathname === '/api/tasks/cancel') result = bank.cancel(body);
       else if (req.method === 'POST' && url.pathname === '/api/demo/reset') result = bank.reset();

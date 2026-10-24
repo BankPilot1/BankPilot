@@ -1,3 +1,9 @@
 node_modules/
 .data/
 *.log
+data/raw/
+.env
+.env.*
+!.env.example
+sites/bankpilot-demo/.git/
+sites/bankpilot-demo/dist/

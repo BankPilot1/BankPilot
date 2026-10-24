@@ -1,0 +1,121 @@
+{
+  "question": "分析一下本月消费，指出支出最高的三个类别，并告诉我哪些大额交易值得核查。",
+  "model": "deepseek-flash",
+  "answer": "本月（2026-10）消费合计 188,131.07 元，共 327 笔。\n\n**支出最高的三个类别：**\n1. 生鲜食品：43,738.59 元\n2. 其他消费：27,135.92 元\n3. 线下购物：19,287.17 元\n\n**大额交易核查提示**（按单笔超过 2000 元的固定演示阈值筛选，仅为提示，不代表异常或欺诈）：\n- 10-15，Wintheiser, Dietrich and Schimmel，其他消费，16,068.36 元\n- 10-20，Hahn, Douglas and Schowalter，旅行住宿，12,112.24 元\n- 10-09，Kerluke-Abshire，网络购物，7,807.52 元\n\n**说明：** 上述三笔金额较大，建议核对商户与用途是否与本人消费相符。由于没有历史基线，无法判断这些商户或消费模式是否偏离常规。本月总额高于上月（99,792.19 元），但相邻月份统计区间可能不等长，不宜直接视为确定增长趋势。数据来源为 Sparkov 合成数据，日期与金额为演示映射。",
+  "card": {
+    "type": "analysis",
+    "period": "2026-10",
+    "total": 188131.07,
+    "prior": 99792.18999999999,
+    "count": 327,
+    "datasetCount": 324,
+    "fixtureCount": 3,
+    "categories": [
+      [
+        "生鲜食品",
+        43738.590000000004
+      ],
+      [
+        "其他消费",
+        27135.920000000006
+      ],
+      [
+        "线下购物",
+        19287.170000000002
+      ],
+      [
+        "网络购物",
+        17981.390000000003
+      ],
+      [
+        "交通出行",
+        16512.719999999998
+      ],
+      [
+        "亲子宠物",
+        14078.960000000005
+      ],
+      [
+        "旅行住宿",
+        12308.379999999997
+      ],
+      [
+        "休闲娱乐",
+        9496.06
+      ],
+      [
+        "家居生活",
+        7623.84
+      ],
+      [
+        "个人护理",
+        6949.949999999999
+      ],
+      [
+        "医疗健康",
+        6694.59
+      ],
+      [
+        "餐饮美食",
+        6268.500000000001
+      ],
+      [
+        "订阅服务",
+        55
+      ]
+    ],
+    "unusual": [
+      {
+        "id": "sparkov-7ded0bb9f73ff27bb65540fc4b95c714",
+        "accountId": "icbc-debit",
+        "merchant": "Wintheiser, Dietrich and Schimmel",
+        "category": "其他消费",
+        "amount": -16068.36,
+        "date": "2026-10-15T07:32:47+08:00",
+        "kind": "expense",
+        "currency": "CNY",
+        "source": "sparkov",
+        "sourceRecordId": "7ded0bb9f73ff27bb65540fc4b95c714",
+        "originalDate": "2020-12-15 07:32:47",
+        "originalAmount": 2295.48,
+        "originalCurrency": "USD",
+        "originalCategory": "misc_pos"
+      },
+      {
+        "id": "sparkov-9b53506d1e04864cd75224ab0130882f",
+        "accountId": "spdb-credit",
+        "merchant": "Hahn, Douglas and Schowalter",
+        "category": "旅行住宿",
+        "amount": -12112.24,
+        "date": "2026-10-20T23:48:30+08:00",
+        "kind": "expense",
+        "currency": "CNY",
+        "source": "sparkov",
+        "sourceRecordId": "9b53506d1e04864cd75224ab0130882f",
+        "originalDate": "2020-12-20 23:48:30",
+        "originalAmount": 1730.32,
+        "originalCurrency": "USD",
+        "originalCategory": "travel"
+      },
+      {
+        "id": "sparkov-469b017c4f51ebfb4bcaffbf5e157f1d",
+        "accountId": "cmb-credit",
+        "merchant": "Kerluke-Abshire",
+        "category": "网络购物",
+        "amount": -7807.52,
+        "date": "2026-10-09T12:07:14+08:00",
+        "kind": "expense",
+        "currency": "CNY",
+        "source": "sparkov",
+        "sourceRecordId": "469b017c4f51ebfb4bcaffbf5e157f1d",
+        "originalDate": "2020-12-09 12:07:14",
+        "originalAmount": 1115.36,
+        "originalCurrency": "USD",
+        "originalCategory": "shopping_net"
+      }
+    ],
+    "source": "Sparkov 合成信用卡交易",
+    "referenceDate": "2026-10-24",
+    "updatedAt": "2026-10-24T11:48:27.102Z"
+  }
+}
